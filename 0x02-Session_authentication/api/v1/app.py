@@ -1,72 +1,84 @@
 #!/usr/bin/env python3
 """
-Route module for the API
+Route_module_for_the_API
 """
-from os import getenv
 from api.v1.views import app_views
 from flask import Flask, jsonify, abort, request
 from flask_cors import (CORS, cross_origin)
 import os
+from os import getenv
 
 
 app = Flask(__name__)
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 app.register_blueprint(app_views)
 CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
-
-
 auth = None
-if getenv("AUTH_TYPE", None) == "auth":
+AUTH_TYPE = getenv("AUTH_TYPE")
+
+if AUTH_TYPE == "auth":
     from api.v1.auth.auth import Auth
     auth = Auth()
-
-
-if getenv("AUTH_TYPE", None) == "basic_auth":
+elif AUTH_TYPE == "basic_auth":
     from api.v1.auth.basic_auth import BasicAuth
     auth = BasicAuth()
-
-elif getenv("AUTH_TYPE", None) == "session_auth":
+elif AUTH_TYPE == "session_auth":
     from api.v1.auth.session_auth import SessionAuth
     auth = SessionAuth()
+elif AUTH_TYPE == "session_exp_auth":
+    from api.v1.auth.session_exp_auth import SessionExpAuth
+    auth = SessionExpAuth()
+elif AUTH_TYPE == "session_db_auth":
+    from api.v1.auth.session_db_auth import SessionDBAuth
+    auth = SessionDBAuth()
 
 
-@app.errorhandler(401)
-def unauthorized(error) -> str:
-    """Unauthorized handler
-    """
-    return jsonify({"error": "Unauthorized"}), 401
-
-
-@app.errorhandler(403)
-def forbidden(error) -> str:
-    """ Forbidden Error handler
-    """
-    return jsonify({"error": "Forbidden"}), 403
-
-
-@app.errorhandler(404)
+@ app.errorhandler(404)
 def not_found(error) -> str:
     """ Not found handler
     """
     return jsonify({"error": "Not found"}), 404
 
 
-@app.before_request
+@ app.errorhandler(401)
+def unauthorized_error(error) -> str:
+    """ Unauthorized handler
+    """
+    return jsonify({"error": "Unauthorized"}), 401
+
+
+@ app.errorhandler(403)
+def forbidden_error(error) -> str:
+    """ Forbidden handler
+    """
+    return jsonify({"error": "Forbidden"}), 403
+
+
+@ app.before_request
 def before_request() -> str:
-    """before request handler"""
+    """ Before Request Handler
+    Requests Validation
+    """
     if auth is None:
         return
-    excluded_paths = ['/api/v1/auth_session/login/',
-                      '/api/v1/status/',
+
+    excluded_paths = ['/api/v1/status/',
                       '/api/v1/unauthorized/',
-                      '/api/v1/forbidden/']
+                      '/api/v1/forbidden/',
+                      '/api/v1/auth_session/login/']
+
     if not auth.require_auth(request.path, excluded_paths):
         return
-    if auth.authorization_header(request) is None and \
-       not auth.session_cookie(request):
+
+    if auth.authorization_header(request) is None \
+            and auth.session_cookie(request) is None:
         abort(401)
-    if auth.current_user(request) is None:
+
+    current_user = auth.current_user(request)
+    if current_user is None:
         abort(403)
-    request.current_user = auth.current_user(request)
+
+    request.current_user = current_user
 
 
 if __name__ == "__main__":

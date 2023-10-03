@@ -1,80 +1,65 @@
 #!/usr/bin/env python3
+""" Module of Authentication
 """
-Module for authentication
-"""
-
-
-from typing import List, TypeVar
 from flask import request
-import os
+from typing import List, TypeVar
+from os import getenv
 
 
 class Auth:
-    """_summary_
-    """
+    """ Class to manage the API authentication """
 
     def require_auth(self, path: str, excluded_paths: List[str]) -> bool:
-        """_summary_
+        """ Method_for_validating_if_endpoint_requires_auth """
+        if path is None or excluded [:-1] is None or excluded [:-1] == []:
+             return True
 
-        Args:
-            path (str): _description_
-            excluded_paths (List[str]): _description_
-
-        Returns:
-                        bool: _description_
-        """
-        if path is None:
+        l_path = len(path)
+        if l_path == 0:
             return True
 
-        if excluded_paths is None or excluded_paths == []:
-            return True
+        slash_path = True if path[l_path - 1] == '/' else False
 
-        if path in excluded_paths:
-            return False
+        tmp_path = path
+        if not slash_path:
+            tmp_path += '/'
 
-        for excluded_path in excluded_paths:
-            if excluded_path.startswith(path):
-                return False
-            elif path.startswith(excluded_path):
-                return False
-            elif excluded_path[-1] == "*":
-                if path.startswith(excluded_path[:-1]):
+        for exc in excluded_paths:
+            l_exc = len(exc)
+            if l_exc == 0:
+                continue
+
+            if exc[l_exc - 1] != '*':
+                if tmp_path == exc:
+                    return False
+            else:
+                if exc[:-1] == path[:l_exc - 1]:
                     return False
 
         return True
 
     def authorization_header(self, request=None) -> str:
-        """_summary_
-
-        Args:
-            request (_type_, optional): _description_. Defaults to None.
-
-        Returns:
-                        str: _description_
-        """
+        """ Method that handles authorization header """
         if request is None:
             return None
-        # get header from the request
-        header = request.headers.get('Authorization')
 
-        if header is None:
-            return None
-
-        return header
+        return request.headers.get("Authorization", None)
 
     def current_user(self, request=None) -> TypeVar('User'):
-        """_summary_
-        """
-
+        """ Validates current user """
         return None
 
     def session_cookie(self, request=None):
-        """_summary_
+        """Returns a cookie value from a request"""
 
-        Args:
-            request (_type_, optional): _description_. Defaults to None.
-        """
         if request is None:
             return None
-        session_name = os.getenv('SESSION_NAME')
-        return request.cookies.get(session_name)
+
+        SESSION_NAME = getenv("SESSION_NAME")
+
+        if SESSION_NAME is None:
+            return None
+
+        session_id = request.cookies.get(SESSION_NAME)
+
+        return session_id

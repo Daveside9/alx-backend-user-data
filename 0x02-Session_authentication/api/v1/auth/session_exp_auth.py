@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-""" Module of Expiration of Session Authentication
+""" Module_of_Expiration_of_Session_Authentication
 """
 from api.v1.auth.session_auth import SessionAuth
 from datetime import datetime, timedelta
@@ -22,7 +22,7 @@ class SessionExpAuth(SessionAuth):
         self.session_duration = session_duration
 
     def create_session(self, user_id=None):
-        """Creation session with expiration"""
+        """Creation_session_with_expiration"""
 
         session_id = super().create_session(user_id)
 
