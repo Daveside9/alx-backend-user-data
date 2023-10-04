@@ -10,7 +10,7 @@ from models.user import User
 def view_all_users() -> str:
     """ GET /api/v1/users
     Return:
-      - list of all User objects JSON represented
+      - list_of_all_User_objects_JSON_represented
     """
     all_users = [user.to_json() for user in User.all()]
     return jsonify(all_users)
@@ -22,8 +22,8 @@ def view_one_user(user_id: str = None) -> str:
     Path parameter:
       - User ID
     Return:
-      - User object JSON represented
-      - 404 if the User ID doesn't exist
+      - User_object_JSON_represented
+      - 404_if_the_User_ID_doesn't_exist
     """
     if user_id is None:
         abort(404)
